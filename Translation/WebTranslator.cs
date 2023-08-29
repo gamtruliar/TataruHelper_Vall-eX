@@ -6,7 +6,11 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Collections.ObjectModel;
-
+using System.IO;
+using System.Net.Http;
+using System.Threading;
+using NAudio.Wave;
+using Newtonsoft.Json;
 using Translation.Baidu;
 using Translation.Deepl;
 using Translation.Papago;
@@ -171,6 +175,11 @@ namespace Translation
                         result = BaiduTranslate(inSentence, fromLangCode, toLangCode);
                         break;
                     }
+                case TranslationEngineName.VallEX:
+                {
+                    result = VallEx(inSentence, fromLangCode, toLangCode);
+                    break;
+                }
                 default:
                     {
                         result = String.Empty;
@@ -178,7 +187,7 @@ namespace Translation
                     }
             }
 
-            if (result.Length > 1)
+            if (result.Length > 1 && translationEngine.EngineName!=TranslationEngineName.VallEX)
             {
                 cachedResult = transaltionCache.FirstOrDefault(x => x.Key == translationRequest);
 
@@ -213,6 +222,12 @@ namespace Translation
 
                 tmpList = Helper.LoadJsonData<List<TranslatorLanguague>>(baiduTrPath, _Logger);
                 tmptranslationEngines.Add(new TranslationEngine(TranslationEngineName.Baidu, tmpList, 3));
+                
+                tmptranslationEngines.Add(new TranslationEngine(TranslationEngineName.VallEX, new List<TranslatorLanguague>()
+                {
+                    new TranslatorLanguague("Input","Input","i"),
+                    new TranslatorLanguague("Output","Output","o"),
+                }, 9));
 
                 tmptranslationEngines = tmptranslationEngines.OrderByDescending(x => x.Quality).ToList();
 
@@ -292,7 +307,58 @@ namespace Translation
 
             return result;
         }
+        private string VallEx(string sentence, string inLang, string outLang)
+        {
+            string result = sentence;
+            sentence = sentence.Substring(sentence.IndexOf(":") + 1);
+            try
+            {
+                Task.Run((Func<Task>)(async () =>
+                {
+                    using (HttpClient client = new HttpClient())
+                    {
 
+                        var data = new FormUrlEncodedContent(new List<KeyValuePair<string, string>>()
+                        {
+                            new KeyValuePair<string, string>("txt", sentence)
+                        });
+                        HttpResponseMessage response = await client.PostAsync("http://127.0.0.1:8000/read/", data);
+                        if (response.IsSuccessStatusCode)
+                        {
+                            string responseBody = await response.Content.ReadAsStringAsync();
+                            var base64Data = JsonConvert.DeserializeObject<string>(responseBody);
+                            // Console.Out.WriteLine(base64Data.Length+"|"+base64Data.Substring(0,10));
+                            Byte[] bytesEncode = Convert.FromBase64String(base64Data);
+                            // Console.Out.WriteLine(bytesEncode.Length);
+                            using (var memoryStream = new MemoryStream(bytesEncode, true))
+                            {
+                                using (var rdr = new Mp3FileReader(memoryStream))
+                                using (var wavStream = WaveFormatConversionStream.CreatePcmStream(rdr))
+                                using (var baStream = new BlockAlignReductionStream(wavStream))
+                                using (var waveOut = new WaveOut(WaveCallbackInfo.FunctionCallback()))
+                                {
+                                    waveOut.Init(baStream);
+                                    waveOut.Play();
+                                    while (waveOut.PlaybackState == PlaybackState.Playing)
+                                    {
+                                        Thread.Sleep(100);
+                                    }
+                                }
+                            }
+                        }
+                        // Console.WriteLine(responseBody);
+
+                    }
+                    
+                }));
+            }
+            catch (Exception e)
+            {
+                _Logger.WriteLog(Convert.ToString(e));
+            }
+
+            return result;
+        }
         private string PreprocessSentence(string sentence)
         {
             return sentence.Replace("&", " and ");
