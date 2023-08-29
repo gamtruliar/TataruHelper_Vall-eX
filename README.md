@@ -1,11 +1,23 @@
 # Tataru Helper
 
+##RealTime Voice Support by Vall-e x
+1. Compile the source
+2. git clone https://github.com/Plachtaa/VALL-E-X
+3. install requirement as readme 
+4. pip install fastapi
+5. pip install scipy
+6. pip install pydub
+7. copy Vall-e_Python/ReadServer.py to the root folder of Vall-e-x
+8. run uvicorn ReadServer:app --reload
+9. open Compiled tataru Helper
+10. change Translation Engine to VallEX, Input for FF Language, Output for Translate to
+
+
+
 [![Current Version](https://img.shields.io/github/release/NightlyRevenger/TataruHelper)](https://github.com/NightlyRevenger/TataruHelper/releases) ![GitHub Releases (by Asset)](https://img.shields.io/github/downloads/NightlyRevenger/TataruHelper/latest/TataruHelper-0.9.106-delta.nupkg?label=Downloads)  [![Crowdin](https://badges.crowdin.net/tataru-helper/localized.svg)](https://crowdin.com/project/tataru-helper) <a href="https://discord.gg/bSrpbd9">
         <img src="https://img.shields.io/discord/592039000538349569?logo=discord"
             alt="chat on Discord"></a>
 
-
-[Download Now](https://github.com/NightlyRevenger/TataruHelper/releases/latest/download/Setup.exe)( \---> Download Setup.exe)
 -
 [Tataru's Discord Server](https://discord.gg/bSrpbd9)  
 -
