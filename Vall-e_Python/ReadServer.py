@@ -28,9 +28,13 @@ print("model loaded")
 
 
 @app.post("/read/")
-async def login(txt: Annotated[str, Form()]):
+async def login(txt: Annotated[str, Form()],voiceman: Annotated[str, Form()],lang: Annotated[str, Form()]):
+    print("{}|{}|{}".format(voiceman,txt,lang))
+    # if lang=="jp":
+    #     txt="[JP]"+txt+"[JP]"
+    # elif lang=="en":
+    #     txt="[EN]"+txt+"[EN]"
     print(txt)
-
     audio_array = generate_audio(txt)
 
     # save audio to disk

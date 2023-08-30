@@ -114,7 +114,7 @@ namespace Translation
                 }
             }
 
-            if (fromLang.SystemName == toLang.SystemName)
+            if (fromLang.SystemName == toLang.SystemName && translationEngine.EngineName!=TranslationEngineName.VallEX)
                 return inSentence;
 
             if (inSentence.All(x => !char.IsLetter(x)))
@@ -225,7 +225,8 @@ namespace Translation
                 
                 tmptranslationEngines.Add(new TranslationEngine(TranslationEngineName.VallEX, new List<TranslatorLanguague>()
                 {
-                    new TranslatorLanguague("Input","Input","i"),
+                    new TranslatorLanguague("Japanese","Japanese","jp"),
+                    new TranslatorLanguague("English","English","en"),
                     new TranslatorLanguague("Output","Output","o"),
                 }, 9));
 
@@ -310,7 +311,14 @@ namespace Translation
         private string VallEx(string sentence, string inLang, string outLang)
         {
             string result = sentence;
-            sentence = sentence.Substring(sentence.IndexOf(":") + 1);
+            var vman = "";
+            var cPos = sentence.IndexOf(":");
+            if (cPos > 0)
+            {
+                vman = sentence.Substring(0, cPos);
+                sentence = sentence.Substring(cPos + 1);
+            }
+
             try
             {
                 Task.Run((Func<Task>)(async () =>
@@ -320,11 +328,15 @@ namespace Translation
 
                         var data = new FormUrlEncodedContent(new List<KeyValuePair<string, string>>()
                         {
-                            new KeyValuePair<string, string>("txt", sentence)
+                            new KeyValuePair<string, string>("txt", sentence),
+                            new KeyValuePair<string, string>("lang", inLang),
+                            new KeyValuePair<string, string>("voiceman", vman)
                         });
+                        // _Logger.WriteLog("S");
                         HttpResponseMessage response = await client.PostAsync("http://127.0.0.1:8000/read/", data);
                         if (response.IsSuccessStatusCode)
                         {
+                            // _Logger.WriteLog("R");
                             string responseBody = await response.Content.ReadAsStringAsync();
                             var base64Data = JsonConvert.DeserializeObject<string>(responseBody);
                             // Console.Out.WriteLine(base64Data.Length+"|"+base64Data.Substring(0,10));
